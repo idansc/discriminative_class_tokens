@@ -21,7 +21,9 @@ We propose a technique that introduces a token ($S_c$) corresponding to an exter
 
 #### installations:
 
-`pip install diffusers"[training]" accelerate "transformers>=4.21.0"`
+`conda env create -f requirements.yml`
+
+`conda activate discriminative-token`
 
 Run this command to log in with your HF Hub token if you haven't before:
 
