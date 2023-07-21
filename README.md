@@ -41,11 +41,11 @@ To train and evaluate use:
 `python run.py --class_index 283 --train True  --evaluate True`
 
 #### Hyperparameters:
-The hyperparameters can be changed in the `config.py` script.
+The hyperparameters can be changed in the `config.py` script. Note that the paper results are based on stable-diffusion version 1.4.
 
 #### Outputs
 
-The script will create folders and store tokens representation in `pipeline_token\` and the images in `img\.` 
+The script will create folders and store tokens representation in `pipeline_token` and the images in `img.` 
 
 
 ## Citation
