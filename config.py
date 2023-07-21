@@ -46,7 +46,7 @@ class RunConfig:
     guidance_scale: int = 7
     height: int = 512
     width: int = 512
-    num_of_SD_inference_steps: int = 40
+    num_of_SD_inference_steps: int = 30
 
     # Discrimnative tokens
     placeholder_token: str = 'newclas'
