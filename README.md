@@ -1,6 +1,6 @@
 # Discriminative Class Tokens for Text-to-Image Diffusion Models (ICCV'2023)
 
-> Idan Schwartz\*<sup>1</sup>, Vésteinn Snæbjarnarson\*<sup>2,3</sup>, Hila Chefer<sup>1</sup>, Ryan Cotterell<sup>3</sup>, Serge Belongie<sup>2</sup>, Lior Wolf<sup>1</sup>, Sagie Benaim<sup>2</sup>
+> Idan Schwartz\*<sup>1</sup>, Vésteinn Snæbjarnarson\*<sup>2</sup>, Hila Chefer<sup>1</sup>, Ryan Cotterell<sup>3</sup>, Serge Belongie<sup>2</sup>, Lior Wolf<sup>1</sup>, Sagie Benaim<sup>2</sup>
 > <sup>1</sup>Tel Aviv University, <sup>2</sup>University of Copenhagen, <sup>3</sup>ETH Zürich
 > \* Denotes equal contribution  
 >
@@ -44,7 +44,6 @@ To train and evaluate use:
 The hyperparameters can be changed in the `config.py` script. Note that the paper results are based on stable-diffusion version 1.4.
 
 #### Outputs
-
 The script will create folders and store tokens representation in `pipeline_token` and the images in `img.` 
 
 
