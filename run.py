@@ -3,7 +3,6 @@ import torch
 import os
 from pathlib import Path
 import torch.utils.checkpoint
-from torch.utils.data import Dataset
 import itertools
 from accelerate import Accelerator
 from diffusers import StableDiffusionPipeline
@@ -14,7 +13,7 @@ from inet_classes import IDX2NAME
 from config import RunConfig
 import pyrallis
 import shutil
-import numpy as np
+
 
 def train(config: RunConfig):
     # A range of imagenet classes to run on
@@ -23,8 +22,10 @@ def train(config: RunConfig):
 
     current_early_stopping = RunConfig.early_stopping
 
-    exp_identifier = f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_' \
-                     f'{config.seed}_{config.number_of_prompts}_{config.early_stopping}'
+    exp_identifier = (
+        f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_'
+        f"{config.seed}_{config.number_of_prompts}_{config.early_stopping}"
+    )
 
     #### Train ####
     print(f"Start experiment {exp_identifier}")
@@ -36,7 +37,7 @@ def train(config: RunConfig):
         if running_class_index > stop_class_idx:
             break
 
-        class_name = class_name.split(',')[0]
+        class_name = class_name.split(",")[0]
         print(f"Start training class token for {class_name}")
         img_dir_path = f"img/{class_name}/train"
         if Path(img_dir_path).exists():
@@ -49,7 +50,6 @@ def train(config: RunConfig):
         # Stable model
         unet, vae, text_encoder, scheduler, tokenizer = utils.prepare_stable(config)
 
-
         #  Extend tokenizer and add a discriminative token ###
         class_infer = config.class_index - 1
         prompt_suffix = " ".join(class_name.lower().split("_"))
@@ -61,7 +61,7 @@ def train(config: RunConfig):
                 f"The tokenizer already contains the token {config.placeholder_token}. Please pass a different"
                 " `placeholder_token` that is not already in the tokenizer."
             )
-        
+
         ## Get token ids for our placeholder and initializer token.
         # This code block will complain if initializer string is not a single token
         ## Convert the initializer_token, placeholder_token to ids
@@ -84,7 +84,9 @@ def train(config: RunConfig):
 
         def collate_fn(examples):
             input_ids = [example["instance_prompt_ids"] for example in examples]
-            input_ids = tokenizer.pad({"input_ids": input_ids}, padding=True, return_tensors="pt").input_ids
+            input_ids = tokenizer.pad(
+                {"input_ids": input_ids}, padding=True, return_tensors="pt"
+            ).input_ids
             texts = [example["instance_prompt"] for example in examples]
             batch = {
                 "texts": texts,
@@ -103,7 +105,11 @@ def train(config: RunConfig):
 
         train_batch_size = config.batch_size
         train_dataloader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=train_batch_size, shuffle=True, collate_fn=collate_fn, pin_memory=True
+            train_dataset,
+            batch_size=train_batch_size,
+            shuffle=True,
+            collate_fn=collate_fn,
+            pin_memory=True,
         )
 
         # Define optimization
@@ -132,9 +138,8 @@ def train(config: RunConfig):
 
         accelerator = Accelerator(
             gradient_accumulation_steps=config.gradient_accumulation_steps,
-            mixed_precision=config.mixed_precision
+            mixed_precision=config.mixed_precision,
         )
-
 
         if config.gradient_checkpointing:
             text_encoder.gradient_checkpointing_enable()
@@ -157,7 +162,6 @@ def train(config: RunConfig):
         classification_model = classification_model.to(accelerator.device)
         text_encoder = text_encoder.to(accelerator.device)
 
-        
         # Keep vae in eval mode as we don't train it
         vae.eval()
         # Keep unet in train mode to enable gradient checkpointing
@@ -172,15 +176,22 @@ def train(config: RunConfig):
         Path(token_dir_path).mkdir(parents=True, exist_ok=True)
         token_path = f"{token_dir_path}/{exp_identifier}_{class_name}"
 
-        latents_shape = (config.batch_size, unet.config.in_channels, config.height // 8, config.width // 8)
-        
+        latents_shape = (
+            config.batch_size,
+            unet.config.in_channels,
+            config.height // 8,
+            config.width // 8,
+        )
+
         if config.skip_exists and os.path.isfile(token_path):
             print(f"Token already exist at {token_path}")
             return
         else:
             for epoch in range(config.num_train_epochs):
                 print(f"Epoch {epoch}")
-                generator = torch.Generator(device=config.device)  # Seed generator to create the inital latent noise
+                generator = torch.Generator(
+                    device=config.device
+                )  # Seed generator to create the inital latent noise
                 generator.manual_seed(config.seed)
                 correct = 0
                 for step, batch in enumerate(train_dataloader):
@@ -199,19 +210,27 @@ def train(config: RunConfig):
                         if do_classifier_free_guidance:
                             max_length = batch["input_ids"].shape[-1]
                             uncond_input = tokenizer(
-                                [""] * config.batch_size, padding="max_length", max_length=max_length,
-                                return_tensors="pt"
+                                [""] * config.batch_size,
+                                padding="max_length",
+                                max_length=max_length,
+                                return_tensors="pt",
                             )
-                            uncond_embeddings = text_encoder(uncond_input.input_ids.to(config.device))[0]
+                            uncond_embeddings = text_encoder(
+                                uncond_input.input_ids.to(config.device)
+                            )[0]
 
                             # For classifier free guidance, we need to do two forward passes.
-                            # Here we concatenate the unconditional and text embeddings into a single batch
-                            # to avoid doing two forward passes
-                            encoder_hidden_states = torch.cat([uncond_embeddings, encoder_hidden_states])
-                        encoder_hidden_states = encoder_hidden_states.to(dtype=weight_dtype)
-                        init_latent = torch.randn(latents_shape,
-                                                  generator=generator,
-                                                  device="cuda").to(dtype=weight_dtype)
+                            # Here we concatenate the unconditional and text embeddings into
+                            # a single batch to avoid doing two forward passes.
+                            encoder_hidden_states = torch.cat(
+                                [uncond_embeddings, encoder_hidden_states]
+                            )
+                        encoder_hidden_states = encoder_hidden_states.to(
+                            dtype=weight_dtype
+                        )
+                        init_latent = torch.randn(
+                            latents_shape, generator=generator, device="cuda"
+                        ).to(dtype=weight_dtype)
 
                         latents = init_latent
                         scheduler.set_timesteps(config.num_of_SD_inference_steps)
@@ -221,30 +240,58 @@ def train(config: RunConfig):
                         for i, t in enumerate(scheduler.timesteps):
                             if i < grad_update_step:  # update only partial
                                 with torch.no_grad():
-                                    latent_model_input = torch.cat(
-                                        [latents] * 2) if do_classifier_free_guidance else latents
-                                    noise_pred = unet(latent_model_input, t,
-                                                      encoder_hidden_states=encoder_hidden_states).sample
+                                    latent_model_input = (
+                                        torch.cat([latents] * 2)
+                                        if do_classifier_free_guidance
+                                        else latents
+                                    )
+                                    noise_pred = unet(
+                                        latent_model_input,
+                                        t,
+                                        encoder_hidden_states=encoder_hidden_states,
+                                    ).sample
 
                                     # perform guidance
                                     if do_classifier_free_guidance:
-                                        noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                                        noise_pred = noise_pred_uncond + config.guidance_scale * (
-                                                noise_pred_text - noise_pred_uncond)
+                                        (
+                                            noise_pred_uncond,
+                                            noise_pred_text,
+                                        ) = noise_pred.chunk(2)
+                                        noise_pred = (
+                                            noise_pred_uncond
+                                            + config.guidance_scale
+                                            * (noise_pred_text - noise_pred_uncond)
+                                        )
 
-                                    latents = scheduler.step(noise_pred, t, latents).prev_sample
+                                    latents = scheduler.step(
+                                        noise_pred, t, latents
+                                    ).prev_sample
                             else:
-                                latent_model_input = torch.cat(
-                                    [latents] * 2) if do_classifier_free_guidance else latents
-                                noise_pred = unet(latent_model_input, t,
-                                                  encoder_hidden_states=encoder_hidden_states).sample
+                                latent_model_input = (
+                                    torch.cat([latents] * 2)
+                                    if do_classifier_free_guidance
+                                    else latents
+                                )
+                                noise_pred = unet(
+                                    latent_model_input,
+                                    t,
+                                    encoder_hidden_states=encoder_hidden_states,
+                                ).sample
                                 # perform guidance
                                 if do_classifier_free_guidance:
-                                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                                    noise_pred = noise_pred_uncond + config.guidance_scale * (
-                                            noise_pred_text - noise_pred_uncond)
+                                    (
+                                        noise_pred_uncond,
+                                        noise_pred_text,
+                                    ) = noise_pred.chunk(2)
+                                    noise_pred = (
+                                        noise_pred_uncond
+                                        + config.guidance_scale
+                                        * (noise_pred_text - noise_pred_uncond)
+                                    )
 
-                                latents = scheduler.step(noise_pred, t, latents).prev_sample
+                                latents = scheduler.step(
+                                    noise_pred, t, latents
+                                ).prev_sample
                                 # scale and decode the image latents with vae
 
                         latents_decode = 1 / 0.18215 * latents
@@ -257,9 +304,13 @@ def train(config: RunConfig):
                         output = classification_model(image).logits
 
                         if classification_loss is None:
-                            classification_loss = criterion(output, torch.LongTensor([class_infer]).cuda())
+                            classification_loss = criterion(
+                                output, torch.LongTensor([class_infer]).cuda()
+                            )
                         else:
-                            classification_loss += criterion(output, torch.LongTensor([class_infer]).cuda())
+                            classification_loss += criterion(
+                                output, torch.LongTensor([class_infer]).cuda()
+                            )
 
                         pred_class = torch.argmax(output).item()
                         total_loss += classification_loss.detach().item()
@@ -271,31 +322,42 @@ def train(config: RunConfig):
                             txt += f"Desired class: {IDX2NAME[class_infer]}, \n"
                             txt += f"Image class: {IDX2NAME[pred_class]}, \n"
                             txt += f"Loss: {classification_loss.detach().item()}"
-                            with open('run_log.txt', 'a') as f:
+                            with open("run_log.txt", "a") as f:
                                 print(txt, file=f)
                             print(txt)
-                            utils.numpy_to_pil(image_out.permute(0, 2, 3, 1).cpu().detach().numpy())[0].save(
-                                f'{img_dir_path}/{epoch}_{IDX2NAME[pred_class]}_{classification_loss.detach().item()}.jpg',
-                                "JPEG")
+                            utils.numpy_to_pil(
+                                image_out.permute(0, 2, 3, 1).cpu().detach().numpy()
+                            )[0].save(
+                                f"{img_dir_path}/{epoch}_{IDX2NAME[pred_class]}_{classification_loss.detach().item()}.jpg",
+                                "JPEG",
+                            )
 
                         if pred_class == class_infer:
                             correct += 1
 
-                        torch.nn.utils.clip_grad_norm_(text_encoder.get_input_embeddings().parameters(),
-                                                       config.max_grad_norm)
+                        torch.nn.utils.clip_grad_norm_(
+                            text_encoder.get_input_embeddings().parameters(),
+                            config.max_grad_norm,
+                        )
 
                         accelerator.backward(classification_loss)
 
                         # Zero out the gradients for all token embeddings except the newly added
                         # embeddings for the concept, as we only want to optimize the concept embeddings
                         if accelerator.num_processes > 1:
-                            grads = text_encoder.module.get_input_embeddings().weight.grad
+                            grads = (
+                                text_encoder.module.get_input_embeddings().weight.grad
+                            )
                         else:
                             grads = text_encoder.get_input_embeddings().weight.grad
 
                         # Get the index for tokens that we want to zero the grads for
-                        index_grads_to_zero = torch.arange(len(tokenizer)) != placeholder_token_id
-                        grads.data[index_grads_to_zero, :] = grads.data[index_grads_to_zero, :].fill_(0)
+                        index_grads_to_zero = (
+                            torch.arange(len(tokenizer)) != placeholder_token_id
+                        )
+                        grads.data[index_grads_to_zero, :] = grads.data[
+                            index_grads_to_zero, :
+                        ].fill_(0)
 
                         optimizer.step()
                         optimizer.zero_grad()
@@ -306,28 +368,39 @@ def train(config: RunConfig):
                                 print("training collapse, try different hp")
                                 config.seed += 1
                                 print("updated seed", config.seed)
-                            print('update')
+                            print("update")
                             if total_loss < min_loss:
                                 min_loss = total_loss
                                 current_early_stopping = config.early_stopping
                                 # Create the pipeline using the trained modules and save it.
                                 accelerator.wait_for_everyone()
                                 if accelerator.is_main_process:
-                                    print(f"Saved the new discriminative class token pipeline of {class_name} to pipeline_{token_path}")
+                                    print(
+                                        f"Saved the new discriminative class token pipeline of {class_name} to pipeline_{token_path}"
+                                    )
                                     if config.sd_2_1:
-                                        pretrained_model_name_or_path = "stabilityai/stable-diffusion-2-1-base"
+                                        pretrained_model_name_or_path = (
+                                            "stabilityai/stable-diffusion-2-1-base"
+                                        )
                                     else:
-                                        pretrained_model_name_or_path = "CompVis/stable-diffusion-v1-4"
-                                    pipeline = StableDiffusionPipeline.from_pretrained(pretrained_model_name_or_path,
-                                    text_encoder=accelerator.unwrap_model(text_encoder),
-                                    vae=vae,
-                                    unet=unet,
-                                    tokenizer=tokenizer,
+                                        pretrained_model_name_or_path = (
+                                            "CompVis/stable-diffusion-v1-4"
+                                        )
+                                    pipeline = StableDiffusionPipeline.from_pretrained(
+                                        pretrained_model_name_or_path,
+                                        text_encoder=accelerator.unwrap_model(
+                                            text_encoder
+                                        ),
+                                        vae=vae,
+                                        unet=unet,
+                                        tokenizer=tokenizer,
                                     )
                                     pipeline.save_pretrained(f"pipeline_{token_path}")
                             else:
                                 current_early_stopping -= 1
-                            print(f"{current_early_stopping} steps to stop, current best {min_loss}")
+                            print(
+                                f"{current_early_stopping} steps to stop, current best {min_loss}"
+                            )
 
                             total_loss = 0
                             global_step += 1
@@ -337,18 +410,15 @@ def train(config: RunConfig):
                     break
 
 
-
-        
-
-
 def evaluate(config: RunConfig):
     class_index = config.class_index - 1
-    class_name = IDX2NAME[class_index].split(',')[0]
+    class_name = IDX2NAME[class_index].split(",")[0]
 
-    exp_identifier = f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_' \
-                     f'{config.seed}_{config.number_of_prompts}_{config.early_stopping}'
-    
-    
+    exp_identifier = (
+        f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_'
+        f"{config.seed}_{config.number_of_prompts}_{config.early_stopping}"
+    )
+
     # classification model
     classification_model = utils.prepare_classifier(config)
 
@@ -357,7 +427,7 @@ def evaluate(config: RunConfig):
     Path(token_dir_path).mkdir(parents=True, exist_ok=True)
     pipe_path = f"pipeline_{token_dir_path}/{exp_identifier}_{class_name}"
     pipe = StableDiffusionPipeline.from_pretrained(pipe_path).to(config.device)
-    
+
     tokens_to_try = [config.placeholder_token]
     # Create eval dir
     img_dir_path = f"img/{class_name}/eval"
@@ -371,7 +441,6 @@ def evaluate(config: RunConfig):
     else:
         tokens_to_try.append(config.initializer_token)
 
-
     Path(img_dir_path).mkdir(parents=True, exist_ok=True)
     prompt_suffix = " ".join(class_name.lower().split("_"))
 
@@ -383,38 +452,47 @@ def evaluate(config: RunConfig):
         for seed in range(config.test_size):
             if descriptive_token == config.initializer_token:
                 img_id = f"{img_dir_path}/{seed}_{descriptive_token}_{prompt_suffix}"
-                if os.path.exists(f"{img_id}_correct.jpg") or os.path.exists(f"{img_id}_wrong.jpg"):
+                if os.path.exists(f"{img_id}_correct.jpg") or os.path.exists(
+                    f"{img_id}_wrong.jpg"
+                ):
                     print(f"Image exists {img_id} - skip generation")
                     if os.path.exists(f"{img_id}_correct.jpg"):
                         correct += 1
                     continue
-            generator = torch.Generator(device=config.device)  # Seed generator to create the inital latent noise
+            generator = torch.Generator(
+                device=config.device
+            )  # Seed generator to create the inital latent noise
             generator.manual_seed(seed)
-            image_out = pipe(prompt, output_type='pt', generator=generator)[0]
+            image_out = pipe(prompt, output_type="pt", generator=generator)[0]
             image = utils.transform_img_tensor(image_out, config)
 
             output = classification_model(image).logits
             pred_class = torch.argmax(output).item()
 
             if descriptive_token == config.initializer_token:
-                img_path = f"{img_dir_path}/{seed}_{descriptive_token}_{prompt_suffix}" \
-                        f"_{'correct' if pred_class == config.class_index else 'wrong'}.jpg"
+                img_path = (
+                    f"{img_dir_path}/{seed}_{descriptive_token}_{prompt_suffix}"
+                    f"_{'correct' if pred_class == config.class_index else 'wrong'}.jpg"
+                )
             else:
-                img_path = f"{img_dir_path}/{seed}_{exp_identifier}_{IDX2NAME[pred_class]}.jpg"
+                img_path = (
+                    f"{img_dir_path}/{seed}_{exp_identifier}_{IDX2NAME[pred_class]}.jpg"
+                )
 
-            utils.numpy_to_pil(image_out.permute(0, 2, 3, 1).cpu().detach().numpy())[0].save(
-                img_path,
-                "JPEG")
+            utils.numpy_to_pil(image_out.permute(0, 2, 3, 1).cpu().detach().numpy())[
+                0
+            ].save(img_path, "JPEG")
 
             if pred_class == class_index:
                 correct += 1
             print(f"Image class: {IDX2NAME[pred_class]}")
         acc = correct / config.test_size
-        print(f"-----------------------Accuracy {descriptive_token} {acc}-----------------------------")
+        print(
+            f"-----------------------Accuracy {descriptive_token} {acc}-----------------------------"
+        )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = pyrallis.parse(config_class=RunConfig)
 
     # Check the arguments

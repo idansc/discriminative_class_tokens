@@ -1,22 +1,21 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List
 
 
 @dataclass
 class RunConfig:
-    #Exp setup
+    # Exp setup
     class_index: int
     train: bool
     evaluate: bool
 
-    # Id of the expierment
+    # Id of the experiment
     exp_id: str = "demo"
 
     # Whether to use Stable Diffusion v2.1
     sd_2_1: bool = True
 
-    # the classifier (Options: inet (i.e., ImageNet) inat (i.e., iNaturalist), cub (i.e., CUB200))
+    # the classifier (Options: inet (ImageNet), inat (iNaturalist), cub (CUB200))
     classifier: str = "inet"
 
     # Affect training time
@@ -41,7 +40,6 @@ class RunConfig:
     max_grad_norm: str = "1"
     seed: int = 35
 
-
     # Generative model
     guidance_scale: int = 7
     height: int = 512
@@ -49,22 +47,21 @@ class RunConfig:
     num_of_SD_inference_steps: int = 30
 
     # Discrimnative tokens
-    placeholder_token: str = 'newclas'
-    initializer_token: str = 'a'
-
+    placeholder_token: str = "newclas"
+    initializer_token: str = "a"
 
     # Path to save all outputs to
-    output_path: Path = Path(f"results")
+    output_path: Path = Path("results")
     save_as_full_pipeline = True
 
-
     # Cuda related
-    device: str = 'cuda'
+    device: str = "cuda"
     mixed_precision = "fp16"
     gradient_checkpointing = True
 
     # evaluate
     test_size: int = 10
+
 
 def __post_init__(self):
     self.output_path.mkdir(exist_ok=True, parents=True)

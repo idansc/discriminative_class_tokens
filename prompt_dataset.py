@@ -32,7 +32,7 @@ imagenet_templates_small = [
     "a photo of the weird {}",
     "a photo of the large {}",
     "a photo of a cool {}",
-    "a photo of a small {}"
+    "a photo of a small {}",
 ]
 
 
@@ -43,12 +43,12 @@ class PromptDataset(Dataset):
     """
 
     def __init__(
-            self,
-            placeholder_token,
-            prompt_suffix,
-            tokenizer,
-            epoch_size,
-            number_of_prompts,
+        self,
+        placeholder_token,
+        prompt_suffix,
+        tokenizer,
+        epoch_size,
+        number_of_prompts,
     ):
         self.prompt_suffix = prompt_suffix
         self.tokenizer = tokenizer
@@ -74,5 +74,3 @@ class PromptDataset(Dataset):
         ).input_ids[0]
 
         return example
-
-
