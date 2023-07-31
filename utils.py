@@ -13,6 +13,11 @@ import torch
 import kornia
 
 
+# From timm.data.constants
+IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
+
+
 def numpy_to_pil(images):
     """
     Convert a numpy image or a batch of images to a PIL image.
@@ -37,6 +42,10 @@ def transform_img_tensor(image, config):
         image = kornia.geometry.transform.resize(image, 256, interpolation="bicubic")
         image = kornia.geometry.transform.center_crop(image, (224, 224))
         image = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])(image)
+    else:
+        image = kornia.geometry.transform.resize(image, 224, interpolation="bicubic")
+        image = kornia.geometry.transform.center_crop(image, (224, 224))
+        image = T.Normalize(mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD)(image)
     return image
 
 
@@ -47,6 +56,19 @@ def prepare_classifier(config):
         model = ViTForImageClassification.from_pretrained(
             "google/vit-large-patch16-224"
         ).cuda()
+    elif config.classifier == "cub":
+        from vitmae import CustomViTForImageClassification
+
+        model = CustomViTForImageClassification.from_pretrained(
+            "vesteinn/vit-mae-cub"
+        ).cuda()
+    elif config.classifier == "inat":
+        from vitmae import CustomViTForImageClassification
+
+        model = CustomViTForImageClassification.from_pretrained(
+            "vesteinn/vit-mae-inat21"
+        ).cuda()
+
     return model
 
 
