@@ -8,7 +8,7 @@ from accelerate import Accelerator
 from diffusers import StableDiffusionPipeline
 import prompt_dataset
 import utils
-from inet_classes import IDX2NAME
+from inet_classes import IDX2NAME as IDX2NAME_INET
 
 from config import RunConfig
 import pyrallis
@@ -20,12 +20,20 @@ def train(config: RunConfig):
     start_class_idx = config.class_index
     stop_class_idx = config.class_index
 
+    # Classification model
+    classification_model = utils.prepare_classifier(config)
+
     current_early_stopping = RunConfig.early_stopping
 
     exp_identifier = (
         f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_'
         f"{config.seed}_{config.number_of_prompts}_{config.early_stopping}"
     )
+
+    if config.classifier == "inet":
+        IDX2NAME = IDX2NAME_INET
+    else:
+        IDX2NAME = classification_model.config.id2label
 
     #### Train ####
     print(f"Start experiment {exp_identifier}")
@@ -43,9 +51,6 @@ def train(config: RunConfig):
         if Path(img_dir_path).exists():
             shutil.rmtree(img_dir_path)
         Path(img_dir_path).mkdir(parents=True, exist_ok=True)
-
-        # Classification model
-        classification_model = utils.prepare_classifier(config)
 
         # Stable model
         unet, vae, text_encoder, scheduler, tokenizer = utils.prepare_stable(config)
