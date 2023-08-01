@@ -1,5 +1,7 @@
 # Discriminative Class Tokens for Text-to-Image Diffusion Models (ICCV'2023)
 
+This repository contains the code related to our paper *Discriminative Class Tokens for Text-to-Image Diffusion models*. A browser friendly project page is available at [https://vesteinn.github.io/disco/](https://vesteinn.github.io/disco/).
+
 > Idan Schwartz\*<sup>1</sup>, Vésteinn Snæbjarnarson\*<sup>2</sup>, Hila Chefer<sup>1</sup>, Ryan Cotterell<sup>3</sup>, Serge Belongie<sup>2</sup>, Lior Wolf<sup>1</sup>, Sagie Benaim<sup>2</sup>
 > <sup>1</sup>Tel Aviv University, <sup>2</sup>University of Copenhagen, <sup>3</sup>ETH Zürich
 > \* Denotes equal contribution  
@@ -16,7 +18,7 @@ We propose a technique that introduces a token ($S_c$) corresponding to an exter
 
 ## TODO:
 - [x] Release code and support for ImageNet
-- [x] Release support for INaturallist and CUB200
+- [x] Release support for iNaturalist and CUB200
 - [] Add colab and hf-spaces 
 
 #### installations:
