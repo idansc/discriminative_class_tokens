@@ -417,15 +417,20 @@ def train(config: RunConfig):
 
 def evaluate(config: RunConfig):
     class_index = config.class_index - 1
+
+    classification_model = utils.prepare_classifier(config)
+
+    if config.classifier == "inet":
+        IDX2NAME = IDX2NAME_INET
+    else:
+        IDX2NAME = classification_model.config.id2label
+
     class_name = IDX2NAME[class_index].split(",")[0]
 
     exp_identifier = (
         f'{config.exp_id}_{"2.1" if config.sd_2_1 else "1.4"}_{config.epoch_size}_{config.lr}_'
         f"{config.seed}_{config.number_of_prompts}_{config.early_stopping}"
     )
-
-    # classification model
-    classification_model = utils.prepare_classifier(config)
 
     # Stable model
     token_dir_path = f"token/{class_name}"
