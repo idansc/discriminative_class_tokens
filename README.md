@@ -2,7 +2,7 @@
 
 This repository contains the code related to our paper *Discriminative Class Tokens for Text-to-Image Diffusion models*.
 
-> Idan Schwartz\*<sup>1</sup>, Vésteinn Snæbjarnarson\*<sup>2</sup>, Hila Chefer<sup>1</sup>, Ryan Cotterell<sup>3</sup>, Serge Belongie<sup>2</sup>, Lior Wolf<sup>1</sup>, Sagie Benaim<sup>2</sup>
+> Idan Schwartz\*<sup>1</sup>, Vésteinn Snæbjarnarson\*<sup>2</sup>, Hila Chefer<sup>1</sup>, Serge Belongie<sup>2</sup>, Lior Wolf<sup>1</sup>, Sagie Benaim<sup>2</sup>
 > <sup>1</sup>Tel Aviv University, <sup>2</sup>University of Copenhagen, <sup>3</sup>ETH Zürich
 > \* Denotes equal contribution  
 >
@@ -59,7 +59,7 @@ If you make use of our work, please cite our paper:
 ```
 @article{schwartz2023discriminative,
   title={Discriminative Class Tokens for Text-to-Image Diffusion Models},
-  author={Schwartz, Idan and Sn{\ae}bjarnarson, V{\'e}steinn and Chefer, Hila and Cotterell, Ryan and Belongie, Serge and Wolf, Lior  and Benaim, Sagie},
+  author={Schwartz, Idan and Sn{\ae}bjarnarson, V{\'e}steinn and Chefer, Hila and Belongie, Serge and Wolf, Lior and Benaim, Sagie},
   journal={arXiv preprint arXiv:2303.17155},
   year={2023}
 }
