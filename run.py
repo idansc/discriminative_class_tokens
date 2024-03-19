@@ -9,6 +9,7 @@ from diffusers import StableDiffusionPipeline
 import prompt_dataset
 import utils
 from inet_classes import IDX2NAME as IDX2NAME_INET
+from datetime import datetime
 
 from config import RunConfig
 import pyrallis
@@ -50,7 +51,12 @@ def train(config: RunConfig):
         img_dir_path = f"img/{class_name}/train"
         if Path(img_dir_path).exists():
             shutil.rmtree(img_dir_path)
-        Path(img_dir_path).mkdir(parents=True, exist_ok=True)
+        date_time_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
+
+        img_dir_path_with_datetime = f"{img_dir_path}_{date_time_str}"
+
+        Path(img_dir_path_with_datetime).mkdir(parents=True, exist_ok=True)
+
 
         # Stable model
         unet, vae, text_encoder, scheduler, tokenizer = utils.prepare_stable(config)
@@ -309,11 +315,11 @@ def train(config: RunConfig):
                         output = classification_model(image).logits
 
                         if classification_loss is None:
-                            classification_loss = criterion(
+                            classification_loss = -criterion(
                                 output, torch.LongTensor([class_infer]).cuda()
                             )
                         else:
-                            classification_loss += criterion(
+                            classification_loss += -criterion(
                                 output, torch.LongTensor([class_infer]).cuda()
                             )
 
@@ -333,11 +339,11 @@ def train(config: RunConfig):
                             utils.numpy_to_pil(
                                 image_out.permute(0, 2, 3, 1).cpu().detach().numpy()
                             )[0].save(
-                                f"{img_dir_path}/{epoch}_{IDX2NAME[pred_class]}_{classification_loss.detach().item()}.jpg",
+                                f"{img_dir_path_with_datetime}/{epoch}_{IDX2NAME[pred_class]}_{classification_loss.detach().item()}.jpg",
                                 "JPEG",
                             )
 
-                        if pred_class == class_infer:
+                        if pred_class != class_infer:
                             correct += 1
 
                         torch.nn.utils.clip_grad_norm_(

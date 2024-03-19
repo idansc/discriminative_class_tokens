@@ -19,15 +19,15 @@ class RunConfig:
     classifier: str = "inet"
 
     # Affect training time
-    early_stopping: int = 15
+    early_stopping: int = 35
     num_train_epochs: int = 50
 
     # affect variability of the training images
     # i.e., also sets batch size with accumulation
-    epoch_size: int = 5
-    number_of_prompts: int = 3  # how many different prompts to use
+    epoch_size: int = 1
+    number_of_prompts: int = 1  # how many different prompts to use
     batch_size: int = 1  # set to one due to gpu constraints
-    gradient_accumulation_steps: int = 5  # same as the epoch size
+    gradient_accumulation_steps: int = 1  # same as the epoch size
 
     # Skip if there exists a token checkpoint
     skip_exists: bool = False
@@ -38,7 +38,7 @@ class RunConfig:
     weight_decay: float = 1e-2
     eps: float = 1e-08
     max_grad_norm: str = "1"
-    seed: int = 35
+    seed: int = 424
 
     # Generative model
     guidance_scale: int = 7
