@@ -6,6 +6,7 @@ from pathlib import Path
 class RunConfig:
     # Exp setup
     class_index: int
+    class_from:int
     train: bool
     evaluate: bool
 
@@ -20,7 +21,7 @@ class RunConfig:
 
     # Affect training time
     early_stopping: int = 35
-    num_train_epochs: int = 50
+    num_train_epochs: int = 200
 
     # affect variability of the training images
     # i.e., also sets batch size with accumulation
@@ -38,7 +39,7 @@ class RunConfig:
     weight_decay: float = 1e-2
     eps: float = 1e-08
     max_grad_norm: str = "1"
-    seed: int = 424
+    seed: int = 3344
 
     # Generative model
     guidance_scale: int = 7
